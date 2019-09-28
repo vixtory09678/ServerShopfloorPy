@@ -28,8 +28,8 @@ def initMachineSync():
 
 def initMqtt():
     mqtt.on_connect = on_connect
-    # mqtt.connect(const.HOST_URL, 9001, 60)
-    mqtt.connect("192.168.1.70", 9001, 60)
+    mqtt.connect(const.HOST_URL, 9001, 60)
+    # mqtt.connect("192.168.43.70", 9001, 60)
 
 
 def bridgeMQTTControl(config, control):
