@@ -127,10 +127,15 @@ class HostLinkProtocol():
         data = self.__recv()
         if data is None:
             return None
-
+        self.__printMsg("data is " + data)
         arr = data.split(' ')
         for i in range(len(arr)):
-            arr[i] = int(arr[i])
+            try:
+                arr[i] = int(arr[i])
+            except ValueError:
+                self.__printMsg("casting error")
+                return None
+
         return arr
 
     # def requestContinuousDataWrite(self, addr, length):

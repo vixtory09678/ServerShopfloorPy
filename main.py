@@ -101,6 +101,8 @@ def runRequestControl():
         for i in range(len(machineConfig)):
             if clients[i].open():
                 control = clients[i].requestContinuousDataRead("DM400.D", 4)
+                if control is None:
+                    continue
                 bridgeMQTTControl(machineConfig[i], control)
                 print(control)
                 clients[i].close()
@@ -114,6 +116,8 @@ def runRequestAlarm():
         for i in range(len(machineConfig)):
             if clients[i].open():
                 alarm = clients[i].requestContinuousDataRead("MR4001", 19)
+                if alarm is None:
+                    continue
                 error_stack = clients[i].requestContinuousDataRead(
                     "D201.U", 19)
                 time_errors = clients[i].requestContinuousDataRead(
