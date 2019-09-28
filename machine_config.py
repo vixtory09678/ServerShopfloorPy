@@ -1,21 +1,5 @@
-configs = [{
-    "name": "assy1",
-    "mc_id": 1432,
-    "ip": "192.168.43.249",
-    "port": 5002,
-    "unitId": 1
-}, {
-    "name": "assy2",
-    "mc_id": 1424,
-    "ip": "192.168.43.87",
-    "port": 5002,
-    "unitId": 2
-}]
-
 # data class for store state of slave
-
-
-class SlaveConfig:
+class MachineConfig:
     def __init__(self):
         self.name = ""
         self.mc_id = 0
@@ -62,15 +46,22 @@ class SlaveConfig:
         return self.stateCheckDuplicate[index]
 
 
-slaveConfig = []
+configs = [{
+    "name": "assy1",
+    "mc_id": 1432,
+    "ip": "192.168.1.10",
+    "port": 8501,
+    "unitId": 1
+}]
 
-for i in range(2):
-    slaveConfig.append(SlaveConfig())
-    slaveConfig[i].setName(configs[i]["name"])
-    slaveConfig[i].setIP(configs[i]["ip"])
-    slaveConfig[i].setMcId(configs[i]["mc_id"])
-    slaveConfig[i].setPort(configs[i]["port"])
-    slaveConfig[i].setUnitID(configs[i]["unitId"])
+machineConfig = []
+for i in range(len(configs)):
+    machineConfig.append(MachineConfig())
+    machineConfig[i].setName(configs[i]["name"])
+    machineConfig[i].setIP(configs[i]["ip"])
+    machineConfig[i].setMcId(configs[i]["mc_id"])
+    machineConfig[i].setPort(configs[i]["port"])
+    machineConfig[i].setUnitID(configs[i]["unitId"])
 
 ERROR_DESCRIPTION = [
     "Load valve body",
@@ -80,10 +71,16 @@ ERROR_DESCRIPTION = [
     "Place key",
     "Insert ball",
     "Check ball",
-    "Insert seal tail",
-    "Check seal tail",
-    "Load tail",
     "Insert tail",
+    "Test torque",
+    "Check seal tail",
     "Glue",
-    "Test torque"
+    "Load tail",
+    "Insert seal tail",
+    "Table 1",
+    "Unload key",
+    "Load key",
+    "O-ring 1",
+    "O-ring 2",
+    "Table 2"
 ]

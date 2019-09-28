@@ -1,8 +1,10 @@
 # import win_inet_pton
 from pyModbusTCP.client import ModbusClient
-from slave_config import *
-from rounting import *
+from machine_config import *
+from HostLinkProtocol import HostLinkProtocol
 import paho.mqtt.client as mqtt
+import threading
+import constants as const
 import time
 import json
 
@@ -15,22 +17,19 @@ def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
 
-def initSlave():
-    for slave in slaveConfig:
+def initMachineSync():
+    for machine in machineConfig:
         try:
-            clients.append(
-                ModbusClient(
-                    host=slave.getIP(),
-                    port=slave.getPort(),
-                    unit_id=slave.getUnitID()))
+            data = HostLinkProtocol(machine.getIP(), machine.getPort())
+            clients.append(data)
         except ValueError:
             print("Error with host or port params")
 
 
 def initMqtt():
     mqtt.on_connect = on_connect
-    # mqtt.connect("127.0.0.1", 9001, 60)
-    mqtt.connect("192.168.43.70", 9001, 60)
+    mqtt.connect("127.0.0.1", 9001, 60)
+    # mqtt.connect("192.168.1.70", 9001, 60)
 
 
 def bridgeMQTTControl(config, control):
@@ -48,28 +47,28 @@ def bridgeMQTTControl(config, control):
     }
     dataMqtt = json.dumps(dataConfig)
     print('MC/ID : {0} Control Data: {1}'.format(config.getMcId(), dataMqtt))
-    mqtt.publish(CONTROL_PATH_MQTT, dataMqtt)
+    mqtt.publish(const.CONTROL_PATH_MQTT, dataMqtt)
 
 
-def bridgeMQTTPareto(config, errors_inform, addr):
+def bridgeMQTTPareto(config, error_stack, timer_error, addr):
     dataPareto = {
         "name": config.getName(),
         "ip": config.getIP(),
         "error": {
             "error_id": addr,
             "description_error": ERROR_DESCRIPTION[addr],
-            "error_stack": errors_inform[addr],
-            "time_error": errors_inform[addr + 13]
+            "error_stack": error_stack,
+            "time_error": timer_error
         }
     }
     dataMqtt = json.dumps(dataPareto)
     print('MC/ID : {0} Pareto Data: {1}'.format(config.getMcId(), dataMqtt))
-    mqtt.publish(PARETO_PATH_MQTT, dataMqtt)
+    mqtt.publish(const.PARETO_PATH_MQTT, dataMqtt)
 
 
-def bridgeMQTTAlarm(config, alarm, errors_inform):
+def bridgeMQTTAlarm(config, alarm, error_stack, time_errors):
 
-    for i in range(13):
+    for i in range(len(error_stack)):
 
         dataAlarm = {
             "mc_id": config.getMcId(),
@@ -79,12 +78,11 @@ def bridgeMQTTAlarm(config, alarm, errors_inform):
             "description_error": ERROR_DESCRIPTION[i]
         }
 
-        state = (alarm[0] >> i)
-        if (state & 0x01) == True:
+        if error_stack[i] == True:
             if (config.getStateCheckDuplicate(i) == False):
 
                 dataMqtt = json.dumps(dataAlarm)
-                mqtt.publish(ALARM_PATH_MQTT, dataMqtt)
+                mqtt.publish(const.ALARM_PATH_MQTT, dataMqtt)
         else:
             if (config.getStateCheckDuplicate(i) == True):
                 config.setStateCheckDuplicate(i, False)
@@ -93,24 +91,58 @@ def bridgeMQTTAlarm(config, alarm, errors_inform):
                 dataMqtt = json.dumps(dataAlarm)
                 print(
                     'MC/ID : {0} Alarm Data: {1}'.format(config.getMcId(), dataMqtt))
-                mqtt.publish(ALARM_PATH_MQTT, dataMqtt)
+                mqtt.publish(const.ALARM_PATH_MQTT, dataMqtt)
 
-                bridgeMQTTPareto(config, errors_inform, i)
+                bridgeMQTTPareto(config, error_stack[i], time_errors[i], i)
 
 
+def runRequestControl():
+    while True:
+        for i in range(len(machineConfig)):
+            if clients[i].open():
+                control = clients[i].requestContinuousDataRead("DM400.D", 4)
+                bridgeMQTTControl(machineConfig[i], control)
+                print(control)
+                clients[i].close()
+            else:
+                print("can't connect")
+        time.sleep(4)
+
+
+def runRequestAlarm():
+    while True:
+        for i in range(len(machineConfig)):
+            if clients[i].open():
+                alarm = clients[i].requestContinuousDataRead("MR4001", 19)
+                error_stack = clients[i].requestContinuousDataRead(
+                    "D201.U", 19)
+                time_errors = clients[i].requestContinuousDataRead(
+                    "DM410.D", 19)
+                bridgeMQTTAlarm(machineConfig[i],
+                                alarm, error_stack, time_errors)
+                print(control)
+                clients[i].close()
+            else:
+                print("can't connect")
+        time.sleep(4)
+
+
+# main program here
 if __name__ == "__main__":
     initMqtt()
-    initSlave()
+    initMachineSync()
+
+    thread1 = threading.Thread(target=runRequestControl)
+    thread2 = threading.Thread(target=runRequestControl)
+
+    thread1.daemon = True
+    thread2.daemon = True
+
+    thread1.start()
+    thread2.start()
+
+    # thread1.join()
+    # thread2.join()
 
     while True:
-        for i in range(len(slaveConfig)):
-            if clients[i].open():
-                control = clients[i].read_holding_registers(0, 4)
-                alarm = clients[i].read_holding_registers(4, 1)
-                errors_inform = clients[i].read_holding_registers(5, 26)
-
-                bridgeMQTTControl(slaveConfig[i], control)
-                bridgeMQTTAlarm(slaveConfig[i], alarm, errors_inform)
-
-                clients[i].close()
-        time.sleep(4)
+        pass
