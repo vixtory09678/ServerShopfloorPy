@@ -132,14 +132,14 @@ if __name__ == "__main__":
     initMqtt()
     initMachineSync()
 
-    # thread1 = threading.Thread(target=runRequestControl)
-    # thread2 = threading.Thread(target=runRequestControl)
+    thread1 = threading.Thread(target=runRequestControl)
+    thread2 = threading.Thread(target=runRequestControl)
 
-    # thread1.daemon = True
-    # thread2.daemon = True
+    thread1.daemon = True
+    thread2.daemon = True
 
-    # thread1.start()
-    # thread2.start()
+    thread1.start()
+    thread2.start()
 
     # thread1.join()
     # thread2.join()
