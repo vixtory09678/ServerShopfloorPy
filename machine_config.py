@@ -7,7 +7,8 @@ class MachineConfig:
         self.port = 5002
         self.unitId = 0
         self.stateCheckDuplicate = [False, False, False, False, False,
-                                    False, False, False, False, False, False, False, False]
+                                    False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+        self.autoCheckDuplicate = False
 
     def setName(self, name):
         self.name = name
@@ -27,6 +28,9 @@ class MachineConfig:
     def setStateCheckDuplicate(self, index, value):
         self.stateCheckDuplicate[index] = value
 
+    def setAutoCheckDuplicate(self, value):
+        self.autoCheckDuplicate = value
+
     def getName(self):
         return self.name
 
@@ -44,6 +48,9 @@ class MachineConfig:
 
     def getStateCheckDuplicate(self, index):
         return self.stateCheckDuplicate[index]
+
+    def getAutoCheckDuplicate(self):
+        return self.autoCheckDuplicate
 
 
 configs = [{

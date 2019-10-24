@@ -127,7 +127,6 @@ class HostLinkProtocol():
         data = self.__recv()
         if data is None:
             return None
-        self.__printMsg("data is " + data)
         arr = data.split(' ')
         for i in range(len(arr)):
             try:
